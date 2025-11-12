@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Estudiante - Asistencia & Horario</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="flex-between">
+      <h2>Estudiante – Faltas, retrasos y horario</h2>
+      <button onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+
+    <div class="mt-3">
+      <h3>Registro de faltas y retrasos</h3>
+      <table class="table" id="tablaAsistencia">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Asignatura</th>
+            <th>Sesión</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="mt-4">
+      <h3>Horario de clases</h3>
+      <table class="table" id="tablaHorario">
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Asignatura</th>
+            <th>Aula</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const sesion = protegerPagina('estudiante');
+
+  async function cargarAsistencia() {
+    const tbody = document.querySelector('#tablaAsistencia tbody');
+    tbody.innerHTML = '';
+    try {
+      const res = await fetch(`${API_URL}/estudiante/${sesion.detalle.id}/asistencia`);
+      const data = await res.json();
+      data.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${a.id_asistencia}</td>
+          <td>${a.asignatura || '-'}</td>
+          <td>${a.id_sesion || '-'}</td>
+          <td><span class="badge">${a.estado_asistencia}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function cargarHorario() {
+    const tbody = document.querySelector('#tablaHorario tbody');
+    tbody.innerHTML = '';
+    try {
+      const res = await fetch(`${API_URL}/estudiante/${sesion.detalle.id}/horario`);
+      const data = await res.json();
+      data.forEach(h => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${h.dia}</td>
+          <td>${h.hora_inicio}</td>
+          <td>${h.hora_fin}</td>
+          <td>${h.asignatura}</td>
+          <td>${h.aula} (${h.edificio})</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  cargarAsistencia();
+  cargarHorario();
+</script>
+</body>
+</html>
