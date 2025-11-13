@@ -221,6 +221,74 @@ app.post('/api/admin/crear-estudiante', async (req, res) => {
   }
 });
 
+app.post("/api/admin/crear-profesor", async (req, res) => {
+  const { id_profesor, nombres, apellidos, usuario, contrasena } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_profesor", sql.Int, id_profesor)
+      .input("nombres", sql.NVarChar(50), nombres)
+      .input("apellidos", sql.NVarChar(50), apellidos)
+      .input("usuario", sql.NVarChar(50), usuario)
+      .input("contrasena", sql.NVarChar(50), contrasena)
+      .input("estado", sql.NVarChar(50), "Activo")
+      .execute("sp_CrearProfesor");
+
+    res.json({ mensaje: "Profesor creado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR CREAR PROFESOR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/admin/crear-representante", async (req, res) => {
+  const { id_representante, nombre, apellido, usuario, contrasena } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_representante", sql.Int, id_representante)
+      .input("nombre", sql.NVarChar(50), nombre)
+      .input("apellido", sql.NVarChar(50), apellido)
+      .input("usuario", sql.NVarChar(50), usuario)
+      .input("contrasena", sql.NVarChar(50), contrasena)
+      .input("estado", sql.NVarChar(50), "Activo")
+      .execute("sp_CrearRepresentante");
+
+    res.json({ mensaje: "Representante creado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR CREAR REPRESENTANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/admin/crear-asignatura", async (req, res) => {
+  const { nombre, descripcion, id_profesor } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("nombre", sql.NVarChar(50), nombre)
+      .input("descripcion", sql.NVarChar(50), descripcion)
+      .input("id_profesor", sql.Int, id_profesor)
+      .execute("sp_CrearAsignatura");
+
+    res.json({ mensaje: "Asignatura creada correctamente" });
+
+  } catch (err) {
+    console.error("ERROR CREAR ASIGNATURA:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 
 /* ============================================================
    INICIAR SERVIDOR
