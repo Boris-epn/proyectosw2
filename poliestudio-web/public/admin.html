@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Administrador - Parámetros de calificación</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="flex-between">
+      <h2>Administrador – Parámetros de cálculo de calificaciones</h2>
+      <button onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+
+    <form id="formPonderacion" class="mt-3">
+      <div class="input-group">
+        <label for="id_calificacion">ID de calificación</label>
+        <input type="number" id="id_calificacion" required />
+      </div>
+
+      <div class="input-group">
+        <label for="nueva_ponderacion">Nueva ponderación (0 a 1)</label>
+        <input type="number" step="0.01" min="0" max="1" id="nueva_ponderacion" required />
+      </div>
+
+      <button type="submit">Actualizar ponderación</button>
+    </form>
+
+    <p id="msg" class="mt-3"></p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const sesion = protegerPagina('administrador');
+
+  const form = document.getElementById('formPonderacion');
+  const msg = document.getElementById('msg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+
+    const id = document.getElementById('id_calificacion').value;
+    const nueva_ponderacion = parseFloat(document.getElementById('nueva_ponderacion').value);
+
+    try {
+      const res = await fetch(`${API_URL}/admin/calificaciones/${id}/ponderacion`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nueva_ponderacion })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        msg.style.color = '#dc2626';
+        msg.textContent = data.error || 'Error';
+      } else {
+        msg.style.color = '#16a34a';
+        msg.textContent = data.mensaje;
+      }
+    } catch (err) {
+      console.error(err);
+      msg.style.color = '#dc2626';
+      msg.textContent = 'Error de servidor';
+    }
+  });
+</script>
+</body>
+</html>
