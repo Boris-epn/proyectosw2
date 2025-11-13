@@ -3,8 +3,9 @@ const sql = require('mssql');
 
 const dbConfig = {
   user: 'hola',               
-  password: 'hola',    
+  password: '12345',    
   server: 'localhost',
+  port: 1433,
   database: 'poliestudio',
   options: {
     encrypt: false,
