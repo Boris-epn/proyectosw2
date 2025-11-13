@@ -7,6 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+/* ============================================================
+   LOGIN
+============================================================ */
 app.post('/api/login', async (req, res) => {
   const { usuario, contrasena } = req.body;
 
@@ -63,24 +67,10 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.put('/api/admin/calificaciones/:id/ponderacion', async (req, res) => {
-  const id_calificacion = parseInt(req.params.id, 10);
-  const { nueva_ponderacion } = req.body; // decimal entre 0 y 1
 
-  try {
-    const pool = await getPool();
-    await pool.request()
-      .input('id_calificacion', sql.Int, id_calificacion)
-      .input('nueva_ponderacion', sql.Decimal(5, 2), nueva_ponderacion)
-      .execute('sp_ModificarPonderacion');
-
-    res.json({ mensaje: 'Ponderación actualizada correctamente.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
+/* ============================================================
+   PROFESOR - Registrar observaciones
+============================================================ */
 app.post('/api/profesor/observaciones', async (req, res) => {
   const { observacion, id_profesor, id_estudiante } = req.body;
 
@@ -102,16 +92,19 @@ app.post('/api/profesor/observaciones', async (req, res) => {
   }
 });
 
+
+/* ============================================================
+   ESTUDIANTE - Asistencia
+============================================================ */
 app.get('/api/estudiante/:id/asistencia', async (req, res) => {
-  const id_estudiante = parseInt(req.params.id, 10);
+  const id_estudiante = parseInt(req.params.id);
 
   try {
     const pool = await getPool();
     const result = await pool.request()
       .input('id_estudiante', sql.Int, id_estudiante)
       .query(`
-        SELECT a.id_asistencia,
-               a.estado_asistencia,
+        SELECT a.id_asistencia, a.estado_asistencia,
                s.id_sesion,
                asig.nombre AS asignatura
         FROM Asistencia a
@@ -129,8 +122,11 @@ app.get('/api/estudiante/:id/asistencia', async (req, res) => {
 });
 
 
+/* ============================================================
+   ESTUDIANTE - Horario
+============================================================ */
 app.get('/api/estudiante/:id/horario', async (req, res) => {
-  const id_estudiante = parseInt(req.params.id, 10);
+  const id_estudiante = parseInt(req.params.id);
 
   try {
     const pool = await getPool();
@@ -156,16 +152,18 @@ app.get('/api/estudiante/:id/horario', async (req, res) => {
 });
 
 
+/* ============================================================
+   REPRESENTANTE - Ver observaciones de sus estudiantes
+============================================================ */
 app.get('/api/representante/:id/observaciones', async (req, res) => {
-  const id_representante = parseInt(req.params.id, 10);
+  const id_representante = parseInt(req.params.id);
 
   try {
     const pool = await getPool();
     const result = await pool.request()
       .input('id_representante', sql.Int, id_representante)
       .query(`
-        SELECT o.id_observacion,
-               o.observacion,
+        SELECT o.id_observacion, o.observacion,
                e.nombres AS nombre_estudiante,
                e.apellidos AS apellido_estudiante,
                p.nombres AS nombre_profesor,
@@ -185,6 +183,48 @@ app.get('/api/representante/:id/observaciones', async (req, res) => {
 });
 
 
+/* ============================================================
+   ADMIN - Crear estudiante
+============================================================ */
+app.post('/api/admin/crear-estudiante', async (req, res) => {
+  const { id_estudiante, nombres, apellidos, usuario, contrasena } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    // 1. Crear cuenta
+    const cuenta = await pool.request()
+      .input("usuario", sql.NVarChar(50), usuario)
+      .input("contrasena", sql.NVarChar(50), contrasena)
+      .input("estado", sql.NVarChar(50), "Activo")
+      .output("id_cuenta", sql.Int)
+      .execute("sp_CrearCuenta");
+
+    const id_cuenta = cuenta.output.id_cuenta;
+
+    // 2. Insertar estudiante con su cédula
+    await pool.request()
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .input("nombres", sql.NVarChar(50), nombres)
+      .input("apellidos", sql.NVarChar(50), apellidos)
+      .input("id_cuenta", sql.Int, id_cuenta)
+      .input("id_representante", sql.Int, null)
+      .query(`
+        INSERT INTO Estudiante (id_estudiante, nombres, apellidos, id_cuenta, id_representante)
+        VALUES (@id_estudiante, @nombres, @apellidos, @id_cuenta, @id_representante)
+      `);
+
+    res.json({ mensaje: "Estudiante creado correctamente" });
+  } catch (err) {
+    console.error("ERROR CREAR ESTUDIANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/* ============================================================
+   INICIAR SERVIDOR
+============================================================ */
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log('Servidor escuchando en http://localhost:' + PORT);
