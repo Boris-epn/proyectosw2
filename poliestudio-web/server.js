@@ -488,6 +488,27 @@ app.post('/api/profesor/sesion-asistencia', async (req, res) => {
   }
 });
 
+/* ============================================================
+   ESTUDIANTE - Ver calificaciones (usando SP)
+============================================================ */
+app.get("/api/estudiante/:id/calificaciones", async (req, res) => {
+  const id_estudiante = parseInt(req.params.id);
+
+  try {
+    const pool = await getPool();
+
+    const result = await pool.request()
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .execute("sp_ConsultarCalificacionesEstudiante");
+
+    res.json(result.recordset);
+
+  } catch (err) {
+    console.error("ERROR CONSULTAR CALIFICACIONES:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 /* ============================================================
    INICIAR SERVIDOR
