@@ -221,94 +221,48 @@ app.post('/api/admin/crear-estudiante', async (req, res) => {
   }
 });
 
-app.post("/api/admin/crear-profesor", async (req, res) => {
-  const { id_profesor, nombres, apellidos, usuario, contrasena } = req.body;
+app.post("/api/admin/asignar-horario", async (req, res) => {
+  const { dia, hora_inicio, hora_fin, id_asignatura, id_paralelo } = req.body;
+
+  console.log("Body recibido en servidor:", req.body);
+
+  // Normaliza a HH:MM:SS
+  function normalizarHora(str) {
+    if (!str) return null;
+    const parts = String(str).trim().split(":"); // ["10","00"] o ["10","00","00"]
+    const hh = (parts[0] || "00").padStart(2, "0");
+    const mm = (parts[1] || "00").padStart(2, "0");
+    const ss = (parts[2] || "00").padStart(2, "0");
+    return `${hh}:${mm}:${ss}`; // "10:00:00"
+  }
+
+  const hi = normalizarHora(hora_inicio);
+  const hf = normalizarHora(hora_fin);
+
+  if (!hi || !hf) {
+    return res.status(400).json({ error: "Horas inválidas" });
+  }
 
   try {
     const pool = await getPool();
 
     await pool.request()
-      .input("id_profesor", sql.Int, id_profesor)
-      .input("nombres", sql.NVarChar(50), nombres)
-      .input("apellidos", sql.NVarChar(50), apellidos)
-      .input("usuario", sql.NVarChar(50), usuario)
-      .input("contrasena", sql.NVarChar(50), contrasena)
-      .input("estado", sql.NVarChar(50), "Activo")
-      .execute("sp_CrearProfesor");
+      .input("dia", sql.NVarChar(50), dia)
+      .input("hora_inicio", sql.NVarChar(8), hi)  // NVARCHAR, NO TIME
+      .input("hora_fin", sql.NVarChar(8), hf)
+      .input("id_asignatura", sql.Int, id_asignatura)
+      .input("id_paralelo", sql.Int, id_paralelo)
+      .query(`
+        INSERT INTO Horario (dia, hora_inicio, hora_fin, id_asignatura, id_paralelo)
+        VALUES (@dia, @hora_inicio, @hora_fin, @id_asignatura, @id_paralelo);
+      `);
 
-    res.json({ mensaje: "Profesor creado correctamente" });
-
+    res.json({ mensaje: "Horario asignado correctamente" });
   } catch (err) {
-    console.error("ERROR CREAR PROFESOR:", err);
+    console.error("ERROR ASIGNAR HORARIO:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
-app.post("/api/admin/crear-representante", async (req, res) => {
-  const { id_representante, nombre, apellido, usuario, contrasena } = req.body;
-
-  try {
-    const pool = await getPool();
-
-    await pool.request()
-      .input("id_representante", sql.Int, id_representante)
-      .input("nombre", sql.NVarChar(50), nombre)
-      .input("apellido", sql.NVarChar(50), apellido)
-      .input("usuario", sql.NVarChar(50), usuario)
-      .input("contrasena", sql.NVarChar(50), contrasena)
-      .input("estado", sql.NVarChar(50), "Activo")
-      .execute("sp_CrearRepresentante");
-
-    res.json({ mensaje: "Representante creado correctamente" });
-
-  } catch (err) {
-    console.error("ERROR CREAR REPRESENTANTE:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post("/api/admin/crear-asignatura", async (req, res) => {
-  const { nombre, descripcion, id_profesor } = req.body;
-
-  try {
-    const pool = await getPool();
-
-    await pool.request()
-      .input("nombre", sql.NVarChar(50), nombre)
-      .input("descripcion", sql.NVarChar(50), descripcion)
-      .input("id_profesor", sql.Int, id_profesor)
-      .execute("sp_CrearAsignatura");
-
-    res.json({ mensaje: "Asignatura creada correctamente" });
-
-  } catch (err) {
-    console.error("ERROR CREAR ASIGNATURA:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post("/api/admin/crear-paralelo", async (req, res) => {
-  const { aula, edificio } = req.body;
-
-  try {
-    const pool = await getPool();
-
-    await pool.request()
-      .input("aula", sql.NVarChar(50), aula)
-      .input("edificio", sql.NVarChar(50), edificio)
-      .execute("sp_CrearParalelo");
-
-    res.json({ mensaje: "Paralelo creado correctamente" });
-
-  } catch (err) {
-    console.error("ERROR CREAR PARALELO:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-
 
 
 

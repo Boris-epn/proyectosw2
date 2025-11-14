@@ -13,30 +13,37 @@ function mostrar(vista) {
 }
 
 /* ==============================
-    FORMULARIOS
-=============================== */
+    CREAR ESTUDIANTE
+============================== */
 
 function formCrearEstudiante() {
   cont.innerHTML = `
     <h3>Crear Estudiante</h3>
     <div class="input-group">
         <label>Cédula</label>
-  <input id="id_estudiante">
+        <input id="id_estudiante">
+    </div>
+
+    <div class="input-group">
       <label>Nombres</label>
       <input id="nombres">
     </div>
+
     <div class="input-group">
       <label>Apellidos</label>
       <input id="apellidos">
     </div>
+
     <div class="input-group">
       <label>Usuario</label>
       <input id="usuario">
     </div>
+
     <div class="input-group">
       <label>Contraseña</label>
       <input id="contrasena" type="password">
     </div>
+
     <button onclick="crearEstudiante()">Crear</button>
     <p id="msg" class="mt-3"></p>
   `;
@@ -67,7 +74,11 @@ async function crearEstudiante() {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
   }
-}                                                        
+}
+
+/* ==============================
+    CREAR PROFESOR
+============================== */
 
 function formCrearProfesor() {
   cont.innerHTML = `
@@ -95,14 +106,13 @@ function formCrearProfesor() {
 
     <div class="input-group">
       <label>Contraseña</label>
-      <input type="password" id="contrasena_prof">
+      <input id="contrasena_prof" type="password">
     </div>
 
     <button onclick="crearProfesor()">Crear</button>
     <p id="msg" class="mt-3"></p>
   `;
 }
-
 
 async function crearProfesor() {
   const body = {
@@ -125,15 +135,21 @@ async function crearProfesor() {
     const data = await res.json();
     msg.style.color = res.ok ? "green" : "red";
     msg.textContent = data.mensaje || data.error;
+
   } catch (e) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
   }
 }
 
+/* ==============================
+    CREAR REPRESENTANTE
+============================== */
+
 function formCrearRepresentante() {
   cont.innerHTML = `
     <h3>Crear Representante</h3>
+
     <div class="input-group">
       <label>Cédula</label>
       <input id="id_representante">
@@ -156,7 +172,7 @@ function formCrearRepresentante() {
 
     <div class="input-group">
       <label>Contraseña</label>
-      <input type="password" id="contrasena_rep">
+      <input id="contrasena_rep" type="password">
     </div>
 
     <button onclick="crearRepresentante()">Crear</button>
@@ -186,18 +202,22 @@ async function crearRepresentante() {
     msg.style.color = res.ok ? "green" : "red";
     msg.textContent = data.mensaje || data.error;
 
-  } catch (e) {
+  } catch (err) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
   }
 }
+
+/* ==============================
+    CREAR ASIGNATURA
+============================== */
 
 function formCrearAsignatura() {
   cont.innerHTML = `
     <h3>Crear Asignatura</h3>
 
     <div class="input-group">
-      <label>Nombre de la asignatura</label>
+      <label>Nombre</label>
       <input id="nombre_asig">
     </div>
 
@@ -207,7 +227,7 @@ function formCrearAsignatura() {
     </div>
 
     <div class="input-group">
-      <label>ID del Profesor</label>
+      <label>ID Profesor</label>
       <input id="id_profesor_asig">
     </div>
 
@@ -236,11 +256,16 @@ async function crearAsignatura() {
     msg.style.color = res.ok ? "green" : "red";
     msg.textContent = data.mensaje || data.error;
 
-  } catch (e) {
+  } catch (err) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
   }
 }
+
+/* ==============================
+    CREAR PARALELO
+============================== */
+
 function formCrearParalelo() {
   cont.innerHTML = `
     <h3>Crear Paralelo</h3>
@@ -279,19 +304,95 @@ async function crearParalelo() {
     msg.style.color = res.ok ? "green" : "red";
     msg.textContent = data.mensaje || data.error;
 
-  } catch (e) {
+  } catch (err) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
   }
 }
 
+/* ==============================
+    ASIGNAR HORARIO
+============================== */
 
+function formAsignarHorario() {
+  cont.innerHTML = `
+    <h3>Asignar Horario</h3>
 
+    <div class="input-group">
+      <label>Día</label>
+      <select id="dia_horario">
+          <option value="Lunes">Lunes</option>
+          <option value="Martes">Martes</option>
+          <option value="Miércoles">Miércoles</option>
+          <option value="Jueves">Jueves</option>
+          <option value="Viernes">Viernes</option>
+      </select>
+    </div>
 
+    <div class="input-group">
+      <label>Hora Inicio</label>
+      <input type="time" id="hora_inicio_horario" step="1">
+    </div>
 
+    <div class="input-group">
+      <label>Hora Fin</label>
+      <input type="time" id="hora_fin_horario" step="1">
+    </div>
 
+    <div class="input-group">
+      <label>ID Asignatura</label>
+      <input id="id_asignatura_horario" type="number">
+    </div>
 
+    <div class="input-group">
+      <label>ID Paralelo</label>
+      <input id="id_paralelo_horario" type="number">
+    </div>
 
+    <button onclick="asignarHorario()">Asignar</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
 
+async function asignarHorario() {
+  const dia = document.getElementById("dia_horario").value;
+  const hora_inicio = document.getElementById("hora_inicio_horario").value;  // "10:00" o "10:00:00"
+  const hora_fin = document.getElementById("hora_fin_horario").value;
+  const id_asignatura = document.getElementById("id_asignatura_horario").value;
+  const id_paralelo = document.getElementById("id_paralelo_horario").value;
 
+  const msg = document.getElementById("msg");
+
+  if (!hora_inicio || !hora_fin) {
+    msg.textContent = "Selecciona horas válidas";
+    msg.style.color = "red";
+    return;
+  }
+
+  const body = {
+    dia,
+    hora_inicio,
+    hora_fin,
+    id_asignatura,
+    id_paralelo
+  };
+
+  console.log("Body que envío al backend:", body);
+
+  try {
+    const res = await fetch(API_URL + "/admin/asignar-horario", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    msg.style.color = res.ok ? "green" : "red";
+    msg.textContent = data.mensaje || data.error;
+
+  } catch (err) {
+    msg.style.color = "red";
+    msg.textContent = "Error de servidor";
+  }
+}
 
