@@ -241,4 +241,57 @@ async function crearAsignatura() {
     msg.textContent = "Error de servidor";
   }
 }
+function formCrearParalelo() {
+  cont.innerHTML = `
+    <h3>Crear Paralelo</h3>
+
+    <div class="input-group">
+      <label>Aula</label>
+      <input id="aula_paralelo">
+    </div>
+
+    <div class="input-group">
+      <label>Edificio</label>
+      <input id="edificio_paralelo">
+    </div>
+
+    <button onclick="crearParalelo()">Crear</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
+
+async function crearParalelo() {
+  const body = {
+    aula: document.getElementById("aula_paralelo").value,
+    edificio: document.getElementById("edificio_paralelo").value
+  };
+
+  const msg = document.getElementById("msg");
+
+  try {
+    const res = await fetch(API_URL + "/admin/crear-paralelo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    msg.style.color = res.ok ? "green" : "red";
+    msg.textContent = data.mensaje || data.error;
+
+  } catch (e) {
+    msg.style.color = "red";
+    msg.textContent = "Error de servidor";
+  }
+}
+
+
+
+
+
+
+
+
+
+
 

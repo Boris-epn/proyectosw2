@@ -287,6 +287,29 @@ app.post("/api/admin/crear-asignatura", async (req, res) => {
   }
 });
 
+app.post("/api/admin/crear-paralelo", async (req, res) => {
+  const { aula, edificio } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("aula", sql.NVarChar(50), aula)
+      .input("edificio", sql.NVarChar(50), edificio)
+      .execute("sp_CrearParalelo");
+
+    res.json({ mensaje: "Paralelo creado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR CREAR PARALELO:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+
 
 
 
