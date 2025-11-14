@@ -24,9 +24,10 @@ function mostrar(vista) {
 function formCrearEstudiante() {
   cont.innerHTML = `
     <h3>Crear Estudiante</h3>
+
     <div class="input-group">
-        <label>Cédula</label>
-        <input id="id_estudiante">
+      <label>Cédula (ID Estudiante)</label>
+      <input id="id_estudiante" type="number">
     </div>
 
     <div class="input-group">
@@ -49,10 +50,16 @@ function formCrearEstudiante() {
       <input id="contrasena" type="password">
     </div>
 
+    <div class="input-group">
+      <label>ID Representante (opcional)</label>
+      <input id="id_representante_est" type="number">
+    </div>
+
     <button onclick="crearEstudiante()">Crear</button>
     <p id="msg" class="mt-3"></p>
   `;
 }
+
 
 async function crearEstudiante() {
   const body = {
@@ -60,7 +67,8 @@ async function crearEstudiante() {
     nombres: document.getElementById("nombres").value,
     apellidos: document.getElementById("apellidos").value,
     usuario: document.getElementById("usuario").value,
-    contrasena: document.getElementById("contrasena").value
+    contrasena: document.getElementById("contrasena").value,
+    id_representante: document.getElementById("id_representante_est").value || null
   };
 
   const msg = document.getElementById("msg");
@@ -75,6 +83,7 @@ async function crearEstudiante() {
     const data = await res.json();
     msg.style.color = res.ok ? "green" : "red";
     msg.textContent = data.mensaje || data.error;
+
   } catch (e) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";

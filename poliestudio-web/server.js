@@ -212,39 +212,28 @@ app.get('/api/representante/:id/observaciones', async (req, res) => {
    ADMIN - Crear estudiante
 ============================================================ */
 app.post('/api/admin/crear-estudiante', async (req, res) => {
-  const { id_estudiante, nombres, apellidos, usuario, contrasena } = req.body;
+  const { id_estudiante, nombres, apellidos, usuario, contrasena, id_representante } = req.body;
 
   try {
     const pool = await getPool();
 
-    // 1. Crear cuenta
-    const cuenta = await pool.request()
-      .input("usuario", sql.NVarChar(50), usuario)
-      .input("contrasena", sql.NVarChar(50), contrasena)
-      .input("estado", sql.NVarChar(50), "Activo")
-      .output("id_cuenta", sql.Int)
-      .execute("sp_CrearCuenta");
-
-    const id_cuenta = cuenta.output.id_cuenta;
-
-    // 2. Insertar estudiante con su cédula
     await pool.request()
       .input("id_estudiante", sql.Int, id_estudiante)
       .input("nombres", sql.NVarChar(50), nombres)
       .input("apellidos", sql.NVarChar(50), apellidos)
-      .input("id_cuenta", sql.Int, id_cuenta)
-      .input("id_representante", sql.Int, null)
-      .query(`
-        INSERT INTO Estudiante (id_estudiante, nombres, apellidos, id_cuenta, id_representante)
-        VALUES (@id_estudiante, @nombres, @apellidos, @id_cuenta, @id_representante)
-      `);
+      .input("usuario", sql.NVarChar(50), usuario)
+      .input("contrasena", sql.NVarChar(50), contrasena)
+      .input("id_representante", sql.Int, id_representante || null)
+      .execute("sp_CrearEstudiante");
 
     res.json({ mensaje: "Estudiante creado correctamente" });
+
   } catch (err) {
     console.error("ERROR CREAR ESTUDIANTE:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.post("/api/admin/asignar-horario", async (req, res) => {
   const { dia, hora_inicio, hora_fin, id_asignatura, id_paralelo } = req.body;
@@ -505,6 +494,67 @@ app.get("/api/estudiante/:id/calificaciones", async (req, res) => {
 
   } catch (err) {
     console.error("ERROR CONSULTAR CALIFICACIONES:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/representante/:id/calificaciones', async (req, res) => {
+  const id_representante = parseInt(req.params.id);
+
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input("id_representante", sql.Int, id_representante)
+      .query(`
+        SELECT e.id_estudiante,
+               e.nombres AS nombre_estudiante,
+               e.apellidos AS apellido_estudiante,
+               a.nombre AS nombre_asignatura,
+               c.nombre_actividad AS actividad,
+               c.valor_calificacion AS calificacion,
+               c.ponderacion,
+               (c.valor_calificacion * c.ponderacion / 100.0) AS calificacionPonderada
+        FROM Estudiante e
+        INNER JOIN Calificacion c ON e.id_estudiante = c.id_estudiante
+        INNER JOIN Asignatura a ON c.id_asignatura = a.id_asignatura
+        WHERE e.id_representante = @id_representante
+        ORDER BY e.id_estudiante, a.nombre, c.nombre_actividad;
+      `);
+
+    res.json(result.recordset);
+
+  } catch (err) {
+    console.error("ERROR CALIFICACIONES REPRESENTANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/representante/:id/asistencia', async (req, res) => {
+  const id_representante = parseInt(req.params.id);
+
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input("id_representante", sql.Int, id_representante)
+      .query(`
+        SELECT e.id_estudiante,
+               e.nombres AS nombre_estudiante,
+               e.apellidos AS apellido_estudiante,
+               a.estado_asistencia,
+               s.id_sesion,
+               asig.nombre AS asignatura
+        FROM Estudiante e
+        INNER JOIN Asistencia a ON e.id_estudiante = a.id_estudiante
+        LEFT JOIN Sesion s ON a.id_asistencia = s.id_asistencia
+        LEFT JOIN Asignatura asig ON s.id_asignatura = asig.id_asignatura
+        WHERE e.id_representante = @id_representante
+        ORDER BY e.id_estudiante, a.id_asistencia DESC;
+      `);
+
+    res.json(result.recordset);
+
+  } catch (err) {
+    console.error("ERROR ASISTENCIA REPRESENTANTE:", err);
     res.status(500).json({ error: err.message });
   }
 });
