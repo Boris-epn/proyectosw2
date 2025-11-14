@@ -66,6 +66,31 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: 'Error de servidor' });
   }
 });
+/* ============================================================
+   ADMIN - Crear REPRESENTANTE
+============================================================ */
+app.post("/api/admin/crear-representante", async (req, res) => {
+  const { id_representante, nombre, apellido, usuario, contrasena } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_representante", sql.Int, id_representante)
+      .input("nombre", sql.NVarChar(50), nombre)
+      .input("apellido", sql.NVarChar(50), apellido)
+      .input("usuario", sql.NVarChar(50), usuario)
+      .input("contrasena", sql.NVarChar(50), contrasena)
+      .input("estado", sql.NVarChar(50), "Activo")
+      .execute("sp_CrearRepresentante");
+
+    res.json({ mensaje: "Representante creado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR CREAR REPRESENTANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 /* ============================================================
@@ -264,7 +289,82 @@ app.post("/api/admin/asignar-horario", async (req, res) => {
   }
 });
 
+app.post("/api/admin/desactivar-cuenta", async (req, res) => {
+  const { id_cuenta } = req.body;
 
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_cuenta", sql.Int, id_cuenta)
+      .execute("sp_DesactivarCuenta");
+
+    res.json({ mensaje: "Cuenta desactivada correctamente" });
+
+  } catch (err) {
+    console.error("ERROR DESACTIVAR CUENTA:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/admin/editar-estudiante", async (req, res) => {
+  const { id_estudiante, nombres, apellidos, id_representante } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .input("nombres", sql.NVarChar(50), nombres)
+      .input("apellidos", sql.NVarChar(50), apellidos)
+      .input("id_representante", sql.Int, id_representante || null)
+      .execute("sp_EditarEstudiante");
+
+    res.json({ mensaje: "Estudiante actualizado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR EDITAR ESTUDIANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+app.put("/api/admin/editar-profesor", async (req, res) => {
+  const { id_profesor, nombres, apellidos } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_profesor", sql.Int, id_profesor)
+      .input("nombres", sql.NVarChar(50), nombres)
+      .input("apellidos", sql.NVarChar(50), apellidos)
+      .execute("sp_EditarProfesor");
+
+    res.json({ mensaje: "Profesor actualizado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR EDITAR PROFESOR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+app.put("/api/admin/editar-representante", async (req, res) => {
+  const { id_representante, nombre, apellido } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_representante", sql.Int, id_representante)
+      .input("nombre", sql.NVarChar(50), nombre)
+      .input("apellido", sql.NVarChar(50), apellido)
+      .execute("sp_EditarRepresentante");
+
+    res.json({ mensaje: "Representante actualizado correctamente" });
+
+  } catch (err) {
+    console.error("ERROR EDITAR REPRESENTANTE:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 /* ============================================================

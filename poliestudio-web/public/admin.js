@@ -10,6 +10,11 @@ function mostrar(vista) {
   if (vista === "crearAsignatura") formCrearAsignatura();
   if (vista === "crearParalelo") formCrearParalelo();
   if (vista === "asignarHorario") formAsignarHorario();
+  if (vista === "editarEstudiante") formEditarEstudiante();
+  if (vista === "editarProfesor") formEditarProfesor();
+  if (vista === "editarRepresentante") formEditarRepresentante();
+  if (vista === "desactivarCuenta") formDesactivarCuenta();
+
 }
 
 /* ==============================
@@ -396,3 +401,150 @@ async function asignarHorario() {
   }
 }
 
+function formEditarEstudiante() {
+  cont.innerHTML = `
+    <h3>Editar Estudiante</h3>
+
+    <label>ID Estudiante</label>
+    <input id="edit_id_estudiante">
+
+    <label>Nuevo nombre</label>
+    <input id="edit_nombre_est">
+
+    <label>Nuevo apellido</label>
+    <input id="edit_apellido_est">
+
+    <label>ID Representante (opcional)</label>
+    <input id="edit_id_representante">
+
+    <button onclick="editarEstudiante()">Guardar Cambios</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
+
+async function editarEstudiante() {
+  const body = {
+    id_estudiante: document.getElementById("edit_id_estudiante").value,
+    nombres: document.getElementById("edit_nombre_est").value,
+    apellidos: document.getElementById("edit_apellido_est").value,
+    id_representante: document.getElementById("edit_id_representante").value || null
+  };
+
+  const msg = document.getElementById("msg");
+
+  const res = await fetch(API_URL + "/admin/editar-estudiante", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  msg.style.color = res.ok ? "green" : "red";
+  msg.textContent = data.mensaje || data.error;
+}
+
+function formEditarProfesor() {
+  cont.innerHTML = `
+    <h3>Editar Profesor</h3>
+
+    <label>ID Profesor</label>
+    <input id="edit_id_profesor">
+
+    <label>Nuevo nombre</label>
+    <input id="edit_nombre_prof">
+
+    <label>Nuevo apellido</label>
+    <input id="edit_apellido_prof">
+
+    <button onclick="editarProfesor()">Guardar Cambios</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
+
+async function editarProfesor() {
+  const body = {
+    id_profesor: document.getElementById("edit_id_profesor").value,
+    nombres: document.getElementById("edit_nombre_prof").value,
+    apellidos: document.getElementById("edit_apellido_prof").value
+  };
+
+  const msg = document.getElementById("msg");
+
+  const res = await fetch(API_URL + "/admin/editar-profesor", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  msg.style.color = res.ok ? "green" : "red";
+  msg.textContent = data.mensaje || data.error;
+}
+
+function formEditarRepresentante() {
+  cont.innerHTML = `
+    <h3>Editar Representante</h3>
+
+    <label>ID Representante</label>
+    <input id="edit_id_rep">
+
+    <label>Nuevo nombre</label>
+    <input id="edit_nombre_rep">
+
+    <label>Nuevo apellido</label>
+    <input id="edit_apellido_rep">
+
+    <button onclick="editarRepresentante()">Guardar Cambios</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
+
+async function editarRepresentante() {
+  const body = {
+    id_representante: document.getElementById("edit_id_rep").value,
+    nombre: document.getElementById("edit_nombre_rep").value,
+    apellido: document.getElementById("edit_apellido_rep").value
+  };
+
+  const msg = document.getElementById("msg");
+
+  const res = await fetch(API_URL + "/admin/editar-representante", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  msg.style.color = res.ok ? "green" : "red";
+  msg.textContent = data.mensaje || data.error;
+}
+
+function formDesactivarCuenta() {
+  cont.innerHTML = `
+    <h3>Desactivar Cuenta</h3>
+
+    <label>ID Cuenta</label>
+    <input id="id_cuenta_desactivar">
+
+    <button onclick="desactivarCuenta()">Desactivar</button>
+    <p id="msg" class="mt-3"></p>
+  `;
+}
+
+async function desactivarCuenta() {
+  const body = {
+    id_cuenta: document.getElementById("id_cuenta_desactivar").value
+  };
+
+  const msg = document.getElementById("msg");
+
+  const res = await fetch(API_URL + "/admin/desactivar-cuenta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  msg.style.color = res.ok ? "green" : "red";
+  msg.textContent = data.mensaje || data.error;
+}
