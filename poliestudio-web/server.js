@@ -366,6 +366,128 @@ app.put("/api/admin/editar-representante", async (req, res) => {
   }
 });
 
+/* ============================================================
+   PROFESOR - Registrar Calificación
+============================================================ */
+app.post('/api/profesor/calificaciones', async (req, res) => {
+  const { nombre_actividad, ponderacion, valor_calificacion, id_estudiante, id_asignatura } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("nombre_actividad", sql.NVarChar(50), nombre_actividad)
+      .input("ponderacion", sql.Int, ponderacion)
+      .input("valor_calificacion", sql.Decimal(4,2), valor_calificacion)
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .input("id_asignatura", sql.Int, id_asignatura)
+      .execute("sp_RegistrarCalificacion");
+
+    res.json({ mensaje: "Calificación registrada correctamente" });
+
+  } catch (err) {
+    console.error("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================================================
+   PROFESOR - Editar Calificación
+============================================================ */
+app.put('/api/profesor/editar-calificacion', async (req, res) => {
+  const { id_calificacion, valor_calificacion } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_calificacion", sql.Int, id_calificacion)
+      .input("valor_calificacion", sql.Decimal(4,2), valor_calificacion)
+      .query(`
+        UPDATE Calificacion
+        SET valor_calificacion = @valor_calificacion
+        WHERE id_calificacion = @id_calificacion
+      `);
+
+    res.json({ mensaje: "Calificación actualizada correctamente" });
+
+  } catch (err) {
+    console.error("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================================================
+   PROFESOR - Crear Sesión
+============================================================ */
+app.post('/api/profesor/crear-sesion', async (req, res) => {
+  const { id_profesor, id_asignatura, id_curso } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    const salida = await pool.request()
+      .input("id_profesor", sql.Int, id_profesor)
+      .input("id_asignatura", sql.Int, id_asignatura)
+      .input("id_curso", sql.Int, id_curso)
+      .output("id_sesion", sql.Int)
+      .execute("sp_CrearSesion");
+
+    res.json({ mensaje: "Sesión creada correctamente", id_sesion: salida.output.id_sesion });
+
+  } catch (err) {
+    console.error("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================================================
+   PROFESOR - Registrar Asistencia
+============================================================ */
+app.post('/api/profesor/asistencia', async (req, res) => {
+  const { id_estudiante, id_sesion, estado_asistencia } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .input("id_sesion", sql.Int, id_sesion)
+      .input("estado_asistencia", sql.NVarChar(50), estado_asistencia)
+      .execute("sp_RegistrarAsistencia");
+
+    res.json({ mensaje: "Asistencia registrada" });
+
+  } catch (err) {
+    console.error("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================================================
+   PROFESOR - Sesión + Asistencia autom.
+============================================================ */
+app.post('/api/profesor/sesion-asistencia', async (req, res) => {
+  const { id_profesor, id_asignatura, id_curso, lista_estudiantes } = req.body;
+
+  try {
+    const pool = await getPool();
+
+    await pool.request()
+      .input("id_profesor", sql.Int, id_profesor)
+      .input("id_asignatura", sql.Int, id_asignatura)
+      .input("id_curso", sql.Int, id_curso)
+      .input("lista_estudiantes", sql.NVarChar(sql.MAX), lista_estudiantes)
+      .execute("sp_CrearSesionYRegistrarAsistencia");
+
+    res.json({ mensaje: "Sesión y asistencias registradas correctamente" });
+
+  } catch (err) {
+    console.error("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 /* ============================================================
    INICIAR SERVIDOR
