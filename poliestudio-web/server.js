@@ -21,12 +21,17 @@ app.post('/api/login', async (req, res) => {
       .input('contrasena', sql.NVarChar(50), contrasena)
       .query(`
         SELECT * FROM Cuenta
-        WHERE usuario = @usuario AND contrasena = @contrasena AND estado = 'Activo';
+        WHERE usuario = @usuario AND contrasena = @contrasena;
       `);
 
     if (cuenta.recordset.length === 0) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
+    
+if (cuenta.recordset[0].estado === "Inactivo") {
+  return res.status(403).json({ error: "Cuenta inactiva. Contacte al administrador." });
+}
+
 
     const id_cuenta = cuenta.recordset[0].id_cuenta;
     let rol = null;

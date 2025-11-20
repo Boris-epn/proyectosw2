@@ -234,6 +234,7 @@ function formRegistrarAsistencia() {
         <option>Presente</option>
         <option>Ausente</option>
         <option>Justificado</option>
+        <option>Atraso</option>
       </select>
     </div>
 
