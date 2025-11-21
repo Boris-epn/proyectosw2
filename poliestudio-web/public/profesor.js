@@ -5,23 +5,13 @@ const cont = document.getElementById("contenido");
 // Cambia de vista
 function mostrar(vista) {
   cont.innerHTML = "";
-
   switch (vista) {
-    case "registrarCalificacion":
-      formRegistrarCalificacion();
-      break;
-    case "editarCalificacion":
-      formEditarCalificacion();
-      break;
-    case "crearSesion":
-      formCrearSesion();
-      break;
-    case "registrarAsistencia":
-      formRegistrarAsistencia();
-      break;
-    case "crearSesionAsistencia":
-      formCrearSesionAsistencia();
-      break;
+    case "registrarCalificacion": formRegistrarCalificacion(); break;
+    case "editarCalificacion": formEditarCalificacion(); break;
+    case "crearSesion": formCrearSesion(); break;
+    case "registrarAsistencia": formRegistrarAsistencia(); break;
+    case "crearSesionAsistencia": formCrearSesionAsistencia(); break;
+    case "registrarObservacion": formRegistrarObservacion(); break;
   }
 }
 
@@ -331,5 +321,58 @@ async function crearSesionAsistencia() {
   } catch (err) {
     msg.style.color = "red";
     msg.textContent = "Error de servidor";
+  }
+}
+
+/* ============================================================
+   FORM: Registrar Observación
+============================================================ */
+function formRegistrarObservacion() {
+  cont.innerHTML = `
+    <h3>Registrar Observación</h3>
+    <div class="input-group">
+      <label>ID Estudiante</label>
+      <input id="obs_id_estudiante" type="number">
+    </div>
+    <div class="input-group">
+      <label>Tipo</label>
+      <select id="obs_tipo">
+        <option value="Comportamiento">Comportamiento</option>
+        <option value="Desempeño">Desempeño</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Detalle</label>
+      <textarea id="obs_texto" placeholder="Descripción breve"></textarea>
+    </div>
+    <button onclick="registrarObservacion()">Guardar</button>
+    <p id="obs_msg" class="mt-3"></p>
+  `;
+}
+
+async function registrarObservacion() {
+  const msg = document.getElementById('obs_msg');
+  const id_estudiante = document.getElementById('obs_id_estudiante').value;
+  const tipo = document.getElementById('obs_tipo').value;
+  const texto = document.getElementById('obs_texto').value.trim();
+  if (!id_estudiante || !texto) {
+    msg.style.color='red'; msg.textContent='Completa los campos'; return;
+  }
+  const body = {
+    observacion: `[${tipo}] ${texto}`,
+    id_profesor: sesion.detalle.id,
+    id_estudiante
+  };
+  try {
+    const res = await fetch(API_URL + '/profesor/observaciones', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    msg.style.color = res.ok ? 'green':'red';
+    msg.textContent = data.mensaje || data.error;
+  } catch {
+    msg.style.color='red'; msg.textContent='Error de servidor';
   }
 }

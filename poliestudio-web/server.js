@@ -157,15 +157,17 @@ app.get('/api/estudiante/:id/asistencia', async (req, res) => {
 ============================================================ */
 app.get('/api/estudiante/:id/horario', async (req, res) => {
   const id_estudiante = parseInt(req.params.id);
-
   try {
     const pool = await getPool();
     const result = await pool.request()
       .input('id_estudiante', sql.Int, id_estudiante)
       .query(`
-        SELECT DISTINCT h.dia, h.hora_inicio, h.hora_fin,
-               asig.nombre AS asignatura,
-               p.aula, p.edificio
+        SELECT DISTINCT
+          h.dia,
+          CONVERT(char(8), h.hora_inicio, 108) AS hora_inicio,
+          CONVERT(char(8), h.hora_fin, 108)    AS hora_fin,
+          asig.nombre AS asignatura,
+          p.aula, p.edificio
         FROM Calificacion c
         INNER JOIN Horario h ON c.id_asignatura = h.id_asignatura
         INNER JOIN Asignatura asig ON h.id_asignatura = asig.id_asignatura
@@ -173,7 +175,6 @@ app.get('/api/estudiante/:id/horario', async (req, res) => {
         WHERE c.id_estudiante = @id_estudiante
         ORDER BY h.dia, h.hora_inicio;
       `);
-
     res.json(result.recordset);
   } catch (err) {
     console.error(err);
@@ -566,9 +567,158 @@ app.get('/api/representante/:id/asistencia', async (req, res) => {
 
 
 /* ============================================================
+   PARAMETROS CALCULO
+============================================================ */
+async function ensureParametrosCalculo(pool) {
+  await pool.request().query(`
+    IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name='ParametrosCalculo')
+    BEGIN
+      CREATE TABLE ParametrosCalculo (
+        id INT PRIMARY KEY,
+        escala_max INT NOT NULL DEFAULT 10,
+        modo_agregacion NVARCHAR(20) NOT NULL DEFAULT 'suma',
+        validar_total_ponderacion BIT NOT NULL DEFAULT 1,
+        prioridad_orden NVARCHAR(400) NULL
+      );
+      INSERT INTO ParametrosCalculo (id, escala_max, modo_agregacion, validar_total_ponderacion, prioridad_orden)
+      VALUES (1,10,'suma',1,'');
+    END;
+  `);
+}
+
+// ADMIN - Obtener parámetros cálculo (sin stored procedure; acceso directo a tabla)
+app.get('/api/admin/parametros-calculo', async (req, res) => {
+  try {
+    const pool = await getPool();
+    await ensureParametrosCalculo(pool);
+    const r = await pool.request().query(`
+      SELECT escala_max, modo_agregacion, validar_total_ponderacion, prioridad_orden
+      FROM ParametrosCalculo WHERE id = 1;
+    `);
+    res.json(r.recordset[0] || {});
+  } catch (e) {
+    console.error('[parametros-calculo][GET]', e.message);
+    res.status(500).json({ error: 'Error al obtener parámetros' });
+  }
+});
+
+// ADMIN - Actualizar parámetros cálculo (UPDATE directo; no usar sp_SetParametrosCalculo)
+app.put('/api/admin/parametros-calculo', async (req, res) => {
+  const { escala_max = 10, modo_agregacion = 'suma', validar_total_ponderacion = true, prioridad_orden = '' } = req.body || {};
+  if (!['suma','promedio'].includes(modo_agregacion)) {
+    return res.status(400).json({ error: 'modo_agregacion inválido (suma|promedio)' });
+  }
+  try {
+    const pool = await getPool();
+    await ensureParametrosCalculo(pool);
+    await pool.request()
+      .input('escala_max', sql.Int, escala_max)
+      .input('modo_agregacion', sql.NVarChar(20), modo_agregacion)
+      .input('validar_total_ponderacion', sql.Bit, validar_total_ponderacion ? 1 : 0)
+      .input('prioridad_orden', sql.NVarChar(400), prioridad_orden)
+      .query(`
+        UPDATE ParametrosCalculo
+        SET escala_max=@escala_max,
+            modo_agregacion=@modo_agregacion,
+            validar_total_ponderacion=@validar_total_ponderacion,
+            prioridad_orden=@prioridad_orden
+        WHERE id=1;
+      `);
+    res.json({ mensaje: 'Parámetros actualizados' });
+  } catch (e) {
+    console.error('[parametros-calculo][PUT]', e.message);
+    res.status(500).json({ error: 'Error al actualizar parámetros' });
+  }
+});
+
+// Nuevo endpoint resumen de calificaciones
+app.get('/api/estudiante/:id/calificaciones-resumen', async (req, res) => {
+  const id_estudiante = parseInt(req.params.id);
+  try {
+    const pool = await getPool();
+    await ensureParametrosCalculo(pool);
+    const params = await pool.request().query(`SELECT * FROM ParametrosCalculo WHERE id=1;`);
+    const p = params.recordset[0];
+
+    const result = await pool.request()
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .execute("sp_ConsultarCalificacionesEstudiante");
+
+    const items = result.recordset;
+    let totalPonderacion = 0, sumaPonderada = 0;
+    items.forEach(r => {
+      totalPonderacion += (r.Ponderacion || 0);
+      sumaPonderada += (r.CalificacionPonderada || 0);
+    });
+
+    let final = (p.modo_agregacion === 'promedio' && totalPonderacion > 0)
+      ? (sumaPonderada * 100 / totalPonderacion)
+      : sumaPonderada;
+
+    const advertenciaPonderacion = p.validar_total_ponderacion && totalPonderacion !== 100;
+
+    res.json({
+      parametros: {
+        escala_max: p.escala_max,
+        modo_agregacion: p.modo_agregacion,
+        validar_total_ponderacion: p.validar_total_ponderacion,
+        prioridad_orden: p.prioridad_orden
+      },
+      resumen: {
+        totalPonderacion,
+        sumaPonderada,
+        final,
+        advertenciaPonderacion
+      }
+    });
+  } catch (e) {
+    console.error('[calificaciones-resumen]', e.message);
+    res.status(500).json({ error: 'Error al generar resumen' });
+  }
+});
+
+
+/* ============================================================
    INICIAR SERVIDOR
 ============================================================ */
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log('Servidor escuchando en http://localhost:' + PORT);
+});
+
+app.post('/api/admin/inscribir-estudiante', async (req, res) => {
+  const { id_estudiante, id_asignatura } = req.body;
+  if (!id_estudiante || !id_asignatura) {
+    return res.status(400).json({ error: 'Datos incompletos' });
+  }
+  try {
+    const pool = await getPool();
+    // Verificar duplicado de inscripción ficticia
+    const dup = await pool.request()
+      .input('id_estudiante', sql.Int, id_estudiante)
+      .input('id_asignatura', sql.Int, id_asignatura)
+      .query(`
+        SELECT 1 FROM Calificacion
+        WHERE id_estudiante=@id_estudiante
+          AND id_asignatura=@id_asignatura
+          AND nombre_actividad='__INSCRIPCION__'
+      `);
+    if (dup.recordset.length > 0) {
+      return res.json({ mensaje: 'El estudiante ya está inscrito en la asignatura.' });
+    }
+
+    // Usar SP existente para crear registro con ponderación y nota cero
+    await pool.request()
+      .input("nombre_actividad", sql.NVarChar(50), '__INSCRIPCION__')
+      .input("ponderacion", sql.Int, 0)
+      .input("valor_calificacion", sql.Decimal(4,2), 0)
+      .input("id_estudiante", sql.Int, id_estudiante)
+      .input("id_asignatura", sql.Int, id_asignatura)
+      .execute("sp_RegistrarCalificacion");
+
+    res.json({ mensaje: 'Inscripción realizada. El horario aparecerá asociado.' });
+  } catch (err) {
+    console.error('ERROR INSCRIBIR:', err);
+    res.status(500).json({ error: 'Error al inscribir' });
+  }
 });

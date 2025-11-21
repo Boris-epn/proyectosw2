@@ -6,6 +6,7 @@ function mostrar(vista) {
   cont.innerHTML = "";
   if (vista === "verCalificaciones") cargarCalificaciones();
   if (vista === "verAsistencia") cargarAsistencia();
+  if (vista === "verObservaciones") cargarObservaciones();
 }
 
 /* ==========================
@@ -103,5 +104,46 @@ async function cargarAsistencia() {
 
   } catch (err) {
     cont.innerHTML += "<p style='color:red'>Error al cargar asistencia</p>";
+  }
+}
+
+/* ==========================
+   VER OBSERVACIONES
+========================== */
+async function cargarObservaciones() {
+  cont.innerHTML = "<h3>Observaciones de Comportamiento</h3>";
+  try {
+    const res = await fetch(API_URL + `/representante/${sesion.detalle.id}/observaciones`);
+    const data = await res.json();
+    // Filtrar solo las que tengan el prefijo estándar
+    const lista = data.filter(o => typeof o.observacion === 'string' && o.observacion.startsWith('[Comportamiento]'));
+    if (lista.length === 0) {
+      cont.innerHTML += "<p>No hay observaciones de comportamiento.</p>";
+      return;
+    }
+    let html = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Estudiante</th>
+            <th>Profesor</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    lista.forEach(o => {
+      html += `
+        <tr>
+          <td>${o.nombre_estudiante} ${o.apellido_estudiante}</td>
+          <td>${o.nombre_profesor} ${o.apellido_profesor}</td>
+          <td>${o.observacion.replace('[Comportamiento]','').trim()}</td>
+        </tr>
+      `;
+    });
+    html += "</tbody></table>";
+    cont.innerHTML += html;
+  } catch (e) {
+    cont.innerHTML += "<p style='color:red'>Error al cargar observaciones</p>";
   }
 }

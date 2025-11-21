@@ -14,7 +14,8 @@ function mostrar(vista) {
   if (vista === "editarProfesor") formEditarProfesor();
   if (vista === "editarRepresentante") formEditarRepresentante();
   if (vista === "desactivarCuenta") formDesactivarCuenta();
-
+  if (vista === "parametrosCalculo") formParametrosCalculo();
+  if (vista === "inscribirEstudiante") formInscribirEstudiante();
 }
 
 /* ==============================
@@ -508,4 +509,107 @@ async function desactivarCuenta() {
 
   const data = await res.json();
   msg.style.color = res.ok ? "green" : "red"; msg.textContent = data.mensaje || data.error;
+}
+
+// --- FORM PARAMETROS CALCULO ---
+function formParametrosCalculo() {
+  // Parámetros se gestionan sin stored procedure (UPDATE directo en server.js)
+  cont.innerHTML = `
+    <h3>Parámetros Cálculo Calificaciones</h3>
+    <div class="input-group">
+      <label>Escala Máx</label>
+      <input id="pc_escala">
+    </div>
+    <div class="input-group">
+      <label>Modo Agregación</label>
+      <select id="pc_modo">
+        <option value="suma">Suma</option>
+        <option value="promedio">Promedio</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Validar total ponderación = 100%</label>
+      <select id="pc_validar">
+        <option value="1">Sí</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Prioridad orden (CSV)</label>
+      <input id="pc_prioridad" placeholder="Parcial,Proyecto,Examen">
+    </div>
+    <button onclick="guardarParametrosCalculo()">Guardar</button>
+    <p id="pc_msg" class="mt-3"></p>
+  `;
+  cargarParametrosCalculo();
+}
+
+async function cargarParametrosCalculo() {
+  const msg = document.getElementById('pc_msg');
+  try {
+    const r = await fetch(API_URL + '/admin/parametros-calculo');
+    const d = await r.json();
+    document.getElementById('pc_escala').value = d.escala_max ?? 10;
+    document.getElementById('pc_modo').value = d.modo_agregacion ?? 'suma';
+    document.getElementById('pc_validar').value = d.validar_total_ponderacion ? '1':'0';
+    document.getElementById('pc_prioridad').value = d.prioridad_orden ?? '';
+  } catch { msg.style.color='red'; msg.textContent='Error al cargar'; }
+}
+
+async function guardarParametrosCalculo() {
+  const msg = document.getElementById('pc_msg');
+  const body = {
+    escala_max: parseInt(document.getElementById('pc_escala').value),
+    modo_agregacion: document.getElementById('pc_modo').value,
+    validar_total_ponderacion: document.getElementById('pc_validar').value === '1',
+    prioridad_orden: document.getElementById('pc_prioridad').value.trim()
+  };
+  try {
+    const r = await fetch(API_URL + '/admin/parametros-calculo', {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    const d = await r.json();
+    msg.style.color = r.ok ? 'green':'red';
+    msg.textContent = d.mensaje || d.error;
+  } catch { msg.style.color='red'; msg.textContent='Error al guardar'; }
+}
+
+// --- FORM INSCRIBIR ESTUDIANTE ---
+function formInscribirEstudiante() {
+  cont.innerHTML = `
+    <h3>Inscribir Estudiante en Asignatura</h3>
+    <div class="input-group">
+      <label>ID Estudiante</label>
+      <input id="insc_id_est" type="number">
+    </div>
+    <div class="input-group">
+      <label>ID Asignatura</label>
+      <input id="insc_id_asig" type="number">
+    </div>
+    <button onclick="inscribirEstudianteAsignatura()">Inscribir</button>
+    <p id="insc_msg" class="mt-3"></p>
+  `;
+}
+
+async function inscribirEstudianteAsignatura() {
+  const msg = document.getElementById('insc_msg');
+  const body = {
+    id_estudiante: document.getElementById('insc_id_est').value,
+    id_asignatura: document.getElementById('insc_id_asig').value
+  };
+  if (!body.id_estudiante || !body.id_asignatura) {
+    msg.style.color='red'; msg.textContent='Completa ambos campos'; return;
+  }
+  try {
+    const res = await fetch(API_URL + '/admin/inscribir-estudiante', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    msg.style.color = res.ok ? 'green':'red';
+    msg.textContent = data.mensaje || data.error;
+  } catch {
+    msg.style.color='red'; msg.textContent='Error de servidor';
+  }
 }

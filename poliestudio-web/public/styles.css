@@ -1,23 +1,31 @@
 :root {
-  --bg: #f4f5fb;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --card-bg: #ffffff;
-  --text-main: #111827;
-  --text-muted: #6b7280;
-  --radius: 0.75rem;
+  --bg: #0f172a;
+  --bg-alt: #111c31;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-soft: #eef2ff;
+  --card-bg: #1e293b;
+  --card-border: #2d3b52;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --danger: #dc2626;
+  --radius: 0.9rem;
+  --shadow: 0 14px 32px -8px rgba(0,0,0,0.35);
+  --gradient: linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
-  background: var(--bg);
+  background: radial-gradient(circle at 25% 20%, #1e293b, #0f172a 70%);
   color: var(--text-main);
+  line-height: 1.45;
+  letter-spacing: .2px;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -32,13 +40,27 @@ body {
 
 .card {
   background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow);
   padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.card:before {
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(120deg,rgba(99,102,241,.08),rgba(236,72,153,.08));
+  pointer-events:none;
 }
 
-h1, h2 {
-  margin-bottom: 1rem;
+h1, h2, h3 {
+  font-weight:600;
+  background:linear-gradient(90deg,#fff,#cbd5e1);
+  -webkit-background-clip:text;
+  color:transparent;
+  margin-bottom:.75rem;
 }
 
 .input-group {
@@ -56,32 +78,41 @@ input, select, textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #334155;
   outline: none;
   transition: border 0.15s;
+  background:#1b2535;
+  color:var(--text-main);
+  font-size:.9rem;
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
+  outline:2px solid var(--primary);
+  outline-offset:2px;
 }
 
 button {
   border: none;
   border-radius: 999px;
   padding: 0.6rem 1.4rem;
-  background: var(--primary);
+  background: var(--gradient);
   color: white;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.15s, transform 0.05s;
+  box-shadow: 0 6px 16px -4px rgba(99,102,241,.4);
+  font-size:.85rem;
+  letter-spacing:.4px;
 }
 
 button:hover {
   background: var(--primary-dark);
+  filter:brightness(1.08);
 }
 
 button:active {
-  transform: scale(0.98);
+  transform: translateY(1px);
 }
 
 .table {
@@ -89,6 +120,10 @@ button:active {
   border-collapse: collapse;
   margin-top: 1rem;
   font-size: 0.9rem;
+  background:#1b2535;
+  border:1px solid #263444;
+  border-radius:.6rem;
+  overflow:hidden;
 }
 
 .table th, .table td {
@@ -98,7 +133,17 @@ button:active {
 }
 
 .table th {
-  background: #f9fafb;
+  background: #243248;
+  font-weight:500;
+  color:#e2e8f0;
+}
+
+.table tbody tr:hover {
+  background:#223146;
+}
+
+.table tbody tr td {
+  transition:background .15s;
 }
 
 .badge {
@@ -106,9 +151,15 @@ button:active {
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  background: #e5e7eb;
-  color: #374151;
+  background:#243248;
+  color:#e2e8f0;
+  font-weight:500;
 }
+
+.badge.presente { background:#065f46; color:#d1fae5; }
+.badge.ausente { background:#991b1b; color:#fee2e2; }
+.badge.justificado { background:#1e3a8a; color:#bfdbfe; }
+.badge.atraso { background:#92400e; color:#fef3c7; }
 
 .mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 1rem; }
@@ -118,9 +169,16 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap:1rem;
 }
 
 textarea {
   min-height: 70px;
   resize: vertical;
 }
+
+/* Scrollbar sutil (opcional) */
+::-webkit-scrollbar { width:10px; }
+::-webkit-scrollbar-track { background:#142030; }
+::-webkit-scrollbar-thumb { background:#334155; border-radius:5px; }
+::-webkit-scrollbar-thumb:hover { background:#475569; }
