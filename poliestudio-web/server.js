@@ -167,13 +167,14 @@ app.get('/api/estudiante/:id/horario', async (req, res) => {
           CONVERT(char(8), h.hora_inicio, 108) AS hora_inicio,
           CONVERT(char(8), h.hora_fin, 108)    AS hora_fin,
           asig.nombre AS asignatura,
-          p.aula, p.edificio
+          p.aula,
+          p.edificio
         FROM Calificacion c
         INNER JOIN Horario h ON c.id_asignatura = h.id_asignatura
         INNER JOIN Asignatura asig ON h.id_asignatura = asig.id_asignatura
         INNER JOIN Paralelo p ON h.id_paralelo = p.id_paralelo
         WHERE c.id_estudiante = @id_estudiante
-        ORDER BY h.dia, h.hora_inicio;
+        ORDER BY h.dia, hora_inicio;
       `);
     res.json(result.recordset);
   } catch (err) {
